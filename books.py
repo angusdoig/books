@@ -55,8 +55,8 @@ else:
     
     print("Database not found")
     rebuild = input("Enter any key to rebuild database from schema file")
-    countries.add_countries()
     cursor.execute("SOURCE /Users/angus/Documents/book_database/book_schema.sql")
+    countries.add_countries()
 
 ###############################################################################
 ### Functions that interact with the MySQL database to insert or query data ###
@@ -616,7 +616,7 @@ def query_data():
 ###############################################################################
 
 # Print welcome statement
-print("\nWelcome to Angus' Book Database Program, v0.4.1")
+print("\nWelcome to Angus' Book Database Program, v0.4.2")
 print("\nUses MySQL Server v8.0.21, Python v3.8.5, and MySQL Connector/Python")
 
 # Determine which of the main paths to take
@@ -657,7 +657,7 @@ root()
 ###############################################################################
 
 # Commit changes to database
-commit = get_input_y_n("ONLY FOR TESTING: Commit changes? \n > ")
+commit = get_input_y_n("Commit changes? (y/n): ")
 
 if commit:
     cnx.commit()
