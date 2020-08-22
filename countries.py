@@ -4,8 +4,8 @@ def add_countries():
   from mysql.connector import errorcode
 
   try:
-      cnx = mysql.connector.connect(user='bookprogram', 
-                                    password='ltox1w-br4hye', 
+      cnx = mysql.connector.connect(user='books', 
+                                    password='towerofbabel', 
                                     host='Anguss-MacBook-Air.local', 
                                     database='books')
   except mysql.connector.Error as err:
@@ -29,5 +29,10 @@ def add_countries():
 
   for (a,b) in country_tuples:
     insert_country = "INSERT INTO country (code, name) VALUES ('" + a + "', '" + b + "');"
-    print(insert_country)
     cursor.execute(insert_country)
+
+  cnx.commit()
+  cursor.close()
+  cnx.close()
+
+add_countries()

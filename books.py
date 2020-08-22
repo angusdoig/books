@@ -11,9 +11,6 @@ from datetime import date
 # Import sys for japes
 import sys
 
-# Import my country script for rebuilding the database upon a reset
-import countries
-
 ###############################################################################
 ###  Connect to the database with the credentials below, initialise cursor  ###
 ###############################################################################
@@ -21,27 +18,20 @@ import countries
 # Attempt database connection as specified below, throw errors if something goes wrong
 try:
     
-    cnx = mysql.connector.connect(user='bookprogram', 
-                                  password='ltox1w-br4hye', 
+    cnx = mysql.connector.connect(user='books', 
+                                  password='towerofbabel', 
                                   host='Anguss-MacBook-Air.local')
+    print("Connected to MySQL server")
 
 except mysql.connector.Error as err:
-
-    if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-        print("Incorrect username or password")
-
-    elif err.errno == errorcode.ER_BAD_DB_ERROR:
-        print("Egads, the database is gone!")
-
-    else:
         print(err)
 
 # Define the cursor
 cursor = cnx.cursor()
 
-
 # Check to see if the database exists - if it does, use it, if not, source it from the schema file
-print("\nConnecting to database...")
+
+print("Connecting to database...")
 
 cursor.execute("SHOW databases;")
 databases = cursor.fetchall()
@@ -54,9 +44,9 @@ if ('books',) in databases:
 else:
     
     print("Database not found")
-    rebuild = input("Enter any key to rebuild database from schema file")
-    cursor.execute("SOURCE /Users/angus/Documents/book_database/book_schema.sql")
-    countries.add_countries()
+    print("Please rebuild the database from the schema file and run countries.py")
+    sys.exit()
+
 
 ###############################################################################
 ### Functions that interact with the MySQL database to insert or query data ###
@@ -66,6 +56,7 @@ else:
 def SELECT(result_column, table, data_column, datum):
     
     select = "SELECT %s FROM %s WHERE %s = %s;" % (result_column, table, data_column, datum)
+    print(select)
     cursor.execute(select)
     result = cursor.fetchall()
     
@@ -99,17 +90,15 @@ def check_for_entry_insert(datum, column, table, insert):
     datum = format_given_data([datum])[0]
     check_list_bool = SELECT(column, table, column, datum)
     
-    if check_list_bool:
-        check = check_list_bool[0][0]
-    
     if not check_list_bool and not insert:
         return False
     
     elif not check_list_bool and insert:
         INSERT(table, column, datum)
-    
+
     else:
         return True
+
 
 # Format the given data for entry into the given columns in the given table, then insert them
 def insert_given_data(data, columns, table):
@@ -176,7 +165,7 @@ def format_given_data(data):
                 else:
                     formatted_string = "'" + datum + "'"
                     formatted_values_list.append(formatted_string)
-    
+
     return formatted_values_list
 
 # Ask user for input with a given prompt, force it to be y/n
@@ -251,8 +240,8 @@ def get_id_from_user_input(prompt, foreign_column, table, foreign_key, required)
 
         elif user_input:
             user_input = format_given_data([user_input])[0]
-            exists_check = check_for_entry_insert(user_input, foreign_column, table, True)
-            if exists_check:
+            check_for_entry_insert(user_input, foreign_column, table, True)
+            if SELECT(foreign_key, table, foreign_column, user_input) != []:
                 id_from_input = SELECT(foreign_key, table, foreign_column, user_input)[0][0]
                 return id_from_input
             else:
@@ -421,7 +410,7 @@ def add_book_data():
         received_data.append(series_id)
         received_columns.append("series_id")
 
-        series_location = get_user_input(" (*) Enter the book's position in the series: ", "number", True)
+        series_location = get_user_input("     Enter the book's position in the series: ", "number", False)
         received_data.append(series_location)
         received_columns.append("series_location")
 
