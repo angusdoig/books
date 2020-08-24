@@ -56,7 +56,6 @@ else:
 def SELECT(result_column, table, data_column, datum):
     
     select = "SELECT %s FROM %s WHERE %s = %s;" % (result_column, table, data_column, datum)
-    print(select)
     cursor.execute(select)
     result = cursor.fetchall()
     
@@ -127,7 +126,7 @@ def insert_given_data(data, columns, table):
 # Don't be like Bobby's school, sanitise your data inputs!
 def sanitise(user_input):
     
-    user_input = user_input.replace("'", "\'").replace("\\", "\\\\")
+    user_input = user_input.replace("'", "\\'")
     SQL_injections = ["; DROP", "; SELECT", "; CREATE", "; INSERT"]
     
     for injection in SQL_injections:
@@ -135,7 +134,6 @@ def sanitise(user_input):
         if injection in user_input:
             print("Take your SQL injection somewhere else, foul cur!")
             sys.exit()
-    
     return user_input
 
 # Format the given data for use in SQL statements, return as a list of formatted data
@@ -225,7 +223,7 @@ def get_user_input(prompt, desired_format, required):
                 return user_input
 
 # Get the user's input, query the given table and find the id needed
-def get_id_from_user_input(prompt, foreign_column, table, foreign_key, required):
+def get_id_from_user_input(prompt, foreign_column, table, foreign_key, required, insert):
     
     while True:
         
@@ -240,8 +238,8 @@ def get_id_from_user_input(prompt, foreign_column, table, foreign_key, required)
 
         elif user_input:
             user_input = format_given_data([user_input])[0]
-            check_for_entry_insert(user_input, foreign_column, table, True)
-            if SELECT(foreign_key, table, foreign_column, user_input) != []:
+            check_for_entry_insert(user_input, foreign_column, table, insert)
+            if SELECT(foreign_key, table, foreign_column, user_input):
                 id_from_input = SELECT(foreign_key, table, foreign_column, user_input)[0][0]
                 return id_from_input
             else:
@@ -401,11 +399,11 @@ def add_book_data():
     received_data.append(book_title)
     received_columns.append("title")
 
-    author_id = get_id_from_user_input(" (*) Enter the author's name: ", "name", "author", "author_id", True)
+    author_id = get_id_from_user_input(" (*) Enter the author's name: ", "name", "author", "author_id", True, True)
     received_data.append(author_id)
     received_columns.append("author_id")
 
-    series_id = get_id_from_user_input("     Enter the series' name: ", "name", "series", "series_id", False)
+    series_id = get_id_from_user_input("     Enter the series' name: ", "name", "series", "series_id", False, True)
     if series_id:
         received_data.append(series_id)
         received_columns.append("series_id")
@@ -418,7 +416,7 @@ def add_book_data():
     extended_data = get_input_y_n("Add more data (e.g. release date, ISBN, etc)? (y/n): ")
     if extended_data:
 
-        publisher_id = get_id_from_user_input("     Enter the publisher's name: " , "name", "publisher", "publisher_id", False)
+        publisher_id = get_id_from_user_input("     Enter the publisher's name: " , "name", "publisher", "publisher_id", False, True)
         if publisher_id:
             received_data.append(publisher_id)
             received_columns.append("publisher_id")
@@ -544,12 +542,12 @@ def query_data():
         if user_input:
             # Find all the books by a given author
             if user_input in ["author", "a"]:
-                author_id = get_id_from_user_input(" (*) Enter the author's name: ", "name", "author", "author_id", True)
+                author_id = get_id_from_user_input(" (*) Enter the author's name: ", "name", "author", "author_id", False, False)
                 if author_id:    
                     author_name = SELECT("name", "author", "author_id", author_id)[0][0]
-                    books_list = SELECT("title", "books", "author_id", (str(author_id) + " ORDER BY series_location"))
+                    books_list = SELECT("title", "books", "author_id", (str(author_id) + " ORDER BY series_id, series_location"))
                     if books_list:
-                        print("%s has the following book(s) in the database: " % (author_name))
+                        print("\n%s has the following book(s) in the database: " % (author_name))
                         for i in books_list:
                             for (a) in i:
                                 print(" *  " + str(a))
@@ -562,26 +560,26 @@ def query_data():
                     break
             # Find all the books in a given series
             elif user_input in ["series", "s"]:
-                series_id = get_id_from_user_input(" (*) Enter the series' name: ", "name", "series", "series_id", True)
-                if series_id:  
+                series_id = get_id_from_user_input(" (*) Enter the series' name: ", "name", "series", "series_id", False, False)
+                if series_id:
                     series_name = SELECT("name", "series", "series_id", series_id)[0][0]  
                     books_list = SELECT("title", "books", "series_id", (str(series_id) + " ORDER BY series_location"))
-                    print("The following book(s) in the database are in the series: %s: " % (series_name))
+                    print("\nThe following book(s) in the database are in the series: %s: " % (series_name))
                     for i in books_list:
                         for (a) in i:
                             print(" *  " + str(a))
                     break
                 else:
-                    print("No series by that name in the database, please try again")
+                    print("No series by that name in the database, please try again\n")
                     break
             # Find all the books published by a given publisher
             elif user_input in ["publisher", "p"]:
-                publisher_id = get_id_from_user_input(" (*) Enter the publisher's name: ", "name", "publisher", "publisher_id", True)
+                publisher_id = get_id_from_user_input(" (*) Enter the publisher's name: ", "name", "publisher", "publisher_id", False, False)
                 if publisher_id:
                     publisher_name = SELECT("name", "publisher", "publisher_id", publisher_id)[0][0]
                     books_list = SELECT("title", "books", "publisher_id", (str(publisher_id) + " ORDER BY series_location"))
                     if books_list:
-                        print("The following book(s) in the database are listed as published by %s:" % (publisher_name))
+                        print("\nThe following book(s) in the database are listed as published by %s:" % (publisher_name))
                         for i in books_list:
                             for (a) in i:
                                 print(" *  " + str(a))
@@ -590,9 +588,9 @@ def query_data():
                         print("There are no books in the database published by %s" % (publisher_name))
                         break
                 else:
-                    print("There is no publisher by that name in the database")
+                    print("No publisher by that name in the database, please try again\n")
                     break
-    user_repeat = get_input_y_n("Would you like to query the database again? (y/n): ")
+    user_repeat = get_input_y_n("\nWould you like to query the database again? (y/n): ")
     
     if user_repeat:
         query_data()
